@@ -1,0 +1,45 @@
+# librarian.sub - self-rescheduling HTCondor job that runs the librarian
+# every 10 minutes. This is the HTCondor equivalent of Slurm's scrontab.
+#
+#   Submit once:   condor_submit librarian.sub
+#   Check it:      condor_q
+#   Stop it:       condor_rm <clusterid>
+#
+# The job stays in the queue forever, flipping Idle -> Running -> Idle on each
+# cron tick. `on_exit_remove = false` is what keeps it from leaving the queue.
+
+LIBRARIAN_DIR           = $ENV(HOME)/brux_librarian
+
+universe                = local
+executable              = $(LIBRARIAN_DIR)/run.sh
+initialdir              = $(LIBRARIAN_DIR)
+
+# Inherit the submitting shell's environment (PATH, KRB5CCNAME, SSH keys, ...).
+getenv                  = true
+
+output                  = $(LIBRARIAN_DIR)/logs/librarian.out
+error                   = $(LIBRARIAN_DIR)/logs/librarian.err
+log                     = $(LIBRARIAN_DIR)/logs/librarian.log
+
+# --- cron schedule: every 10 minutes, forever ---
+cron_minute             = 0,10,20,30,40,50
+cron_hour               = *
+cron_day_of_month       = *
+cron_month              = *
+cron_day_of_week        = *
+
+# Tolerate a late start (busy schedd) rather than skipping the tick entirely.
+cron_window             = 300
+
+# Never leave the queue: this is what makes the job recurring.
+on_exit_remove          = false
+
+# Don't let a crash-looping run get held and stall the schedule.
+on_exit_hold            = false
+periodic_hold           = false
+
+notification            = never
+request_cpus            = 1
+request_memory          = 2048
+
+queue

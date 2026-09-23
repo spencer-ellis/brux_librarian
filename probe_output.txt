@@ -1,0 +1,75 @@
+=================== HOST ===================
+pbrux40cit.hep.brown.edu
+Red Hat Enterprise Linux release 9.8 (Plow)
+
+=================== CONDOR ===================
+$CondorVersion: 23.0.28 2025-08-21 BuildID: 827396 PackageID: 23.0.28-1 $
+$CondorPlatform: x86_64_AlmaLinux9 $
+-- binaries --
+condor_q         /usr/bin/condor_q
+condor_history   /usr/bin/condor_history
+condor_status    /usr/bin/condor_status
+condor_submit    /usr/bin/condor_submit
+
+=================== PYTHON ===================
+Python 3.10.12
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'pandas'
+
+=================== POOL CAPACITY ===================
+
+               Total Owner Claimed Unclaimed Matched Preempting  Drain Backfill BkIdle
+
+  X86_64/LINUX    17     0       9         8       0          0      0        0      0
+
+         Total    17     0       9         8       0          0      0        0      0
+-- per-machine detected resources --
+8 machines
+TOTAL CPUs   : 384
+TOTAL MEM GB : 3012.5
+TOTAL GPUs   : 0
+
+=================== QUEUE ===================
+
+-- Schedd: pbrux40cit.hep.brown.edu : <128.148.128.50:9618?... @ 09/23/26 10:32:03
+Total for query: 3452 jobs; 0 completed, 0 removed, 0 idle, 9 running, 3443 held, 0 suspended 
+Total for all users: 3452 jobs; 0 completed, 0 removed, 0 idle, 9 running, 3443 held, 0 suspended
+
+-- does -global work? --
+Total for query: 3452 jobs; 0 completed, 0 removed, 0 idle, 9 running, 3443 held, 0 suspended 
+Total for all users: 3452 jobs; 0 completed, 0 removed, 0 idle, 9 running, 3443 held, 0 suspended
+
+
+=================== ACCOUNTING GROUPS ===================
+undefined
+
+=================== HISTORY ===================
+-- does 'condor_history -since <expr>' work on this version? --
+7563486
+-- sample of attributes on a recent job --
+Owner                  'gbarone1'
+JobStatus              4
+QDate                  1790173176
+JobStartDate           1790173735
+JobCurrentStartDate    1790173735
+CompletionDate         1790173840
+EnteredCurrentStatus   1790173840
+RemoteWallClockTime    105.0
+RequestCpus            1
+RequestMemory          '/Expr(ifThenElse(NumJobStarts == 0,4096,ifThenElse(NumJobStarts == 1,8192,16384)))/'
+RequestGpus            MISSING
+GpusProvisioned        MISSING
+ExitCode               0
+AccountingGroup        MISSING
+-- jobs in the last 30 days --
+   6815 gbarone1
+   4324 kho29
+    600 smondal5
+    237 jofferma
+
+=================== NETWORK (for gh-pages deploy) ===================
+git version 2.52.0
+git@github.com: Permission denied (publickey).
+
+=================== DONE ===================
