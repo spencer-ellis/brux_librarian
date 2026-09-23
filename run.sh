@@ -12,6 +12,23 @@ mkdir -p "${LOGDIR}"
 # python and git are findable even when PATH is bare.
 export PATH="/usr/bin:/usr/local/bin:/usr/sbin:${PATH}"
 
+# Nothing here runs on a terminal, so anything that tries to *ask* a question
+# would block forever and wedge the schedule. Make git and ssh fail fast
+# instead: no credential prompt, no passphrase prompt, no host-key prompt.
+export GIT_TERMINAL_PROMPT=0
+export GIT_ASKPASS=/bin/true
+export SSH_ASKPASS=/bin/true
+export GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
+
+# Belt and braces: cap each stage so a hang can never outlive one tick.
+if command -v timeout >/dev/null 2>&1; then
+    RUN_PARSE="timeout 900"
+    RUN_DEPLOY="timeout 180"
+else
+    RUN_PARSE=""
+    RUN_DEPLOY=""
+fi
+
 # brux's system python3 (3.10.12) has no pandas/matplotlib, and the schedd runs
 # this job with a bare environment that won't have conda activated. So prefer a
 # self-contained venv living next to this script; see README step 2.
@@ -33,7 +50,11 @@ export POOL
 
 echo "=== librarian run at $(date) (pool: ${POOL}) ==="
 
-"${PYTHON}" parse.py || { echo "parse.py FAILED"; exit 1; }
+${RUN_PARSE} "${PYTHON}" parse.py || {
+    rc=$?
+    [ $rc -eq 124 ] && echo "parse.py TIMED OUT after 900s" || echo "parse.py FAILED (exit $rc)"
+    exit 1
+}
 
 # Sanity-check the JSON before publishing it, so a bad run can't blank the site.
 "${PYTHON}" -c "import json; json.load(open('data_${POOL}.json'))" \
@@ -44,7 +65,11 @@ echo "JSON OK"
 if [ "${SKIP_DEPLOY:-0}" = "1" ]; then
     echo "SKIP_DEPLOY set, not deploying"
 else
-    ./deploy_pages.sh || echo "deploy_pages.sh failed (data still generated locally)"
+    ${RUN_DEPLOY} ./deploy_pages.sh || {
+        rc=$?
+        [ $rc -eq 124 ] && echo "deploy_pages.sh TIMED OUT after 180s (hang averted)" \
+                        || echo "deploy_pages.sh failed with exit $rc (data still generated locally)"
+    }
 fi
 
 echo "=== librarian run finished at $(date) ==="

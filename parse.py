@@ -40,7 +40,17 @@ rounded_time = current_time.replace(minute=nearest_10_minutes, second=0, microse
 to_time = int(rounded_time.timestamp())
 from_time = to_time - config.TIME_WINDOW
 nbins = int(config.TIME_WINDOW / config.TIME_RES)
-time_idxs = [from_time + config.TIME_RES * x for x in range(nbins)]
+
+# Bins are labeled by their END, not their start: bin i covers
+# [from_time + TIME_RES*i, from_time + TIME_RES*(i+1)) and carries the later
+# timestamp. Start-labeling is the usual convention for binned series, but it
+# makes the hover readout on a live dashboard look a full bin stale -- the
+# newest point covers the present yet reads an hour ago. Shifting by TIME_RES
+# (not a hardcoded hour) keeps this correct if the bin size changes.
+#
+# Only the labels move. The binning loop below derives its own bt/et from
+# from_time, so which jobs land in which bin is unaffected.
+time_idxs = [from_time + config.TIME_RES * (x + 1) for x in range(nbins)]
 
 print("window: %s -> %s (%d bins of %ds)" % (
     datetime.datetime.fromtimestamp(from_time, tz).strftime("%Y-%m-%d %H:%M"),
@@ -124,7 +134,11 @@ print("snapshot: %d event samples" % len(snapshot_time_idxs))
 #----------------------------------------
 for obs in observables:
     plot_df = pd.DataFrame({user: d[user][obs] for user in users}, index=time_idxs)
-    plot_df.index = pd.to_datetime(plot_df.index, unit="s")
+    # pd.to_datetime(unit="s") yields UTC-naive timestamps, which would label the
+    # x-axis 4 hours off in EDT. Localize to the configured zone so the static
+    # plots agree with the dashboard, whose JSON carries explicit offsets.
+    plot_df.index = pd.to_datetime(plot_df.index, unit="s", utc=True
+                                   ).tz_convert(config.TIMEZONE)
 
     max_value = plot_df.max().max() if len(users) else 0
     threshold_value = thresholds.get(obs, 0)
