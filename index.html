@@ -211,7 +211,7 @@ tr:nth-child(even) { background: var(--table-stripe); }
     <button class="date-reset" id="date-reset">Reset</button>
     <div class="separator"></div>
     <label>Mode:</label>
-    <button class="mode-toggle active" id="mode-averaged" title="Resources are averaged over fixed 1-hour bins. Covers the full 30-day window.">Averaged</button>
+    <button class="mode-toggle active" id="mode-averaged" title="Resources are averaged over fixed 1-hour bins, labeled by the end of each bin. Covers the full 30-day window. The newest bin is still filling, so it reads low until the hour completes.">Averaged</button>
     <button class="mode-toggle" id="mode-snapshot" title="Exact resource usage sampled at every job start/end event. Higher fidelity but limited to the last 3 days.">Snapshot</button>
   </div>
   <div class="grid">
