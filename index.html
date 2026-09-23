@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRUX Usage Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --text: #1a1a1a;
+  --text-secondary: #555;
+  --border: #ddd;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --tab-bg: #e5e7eb;
+  --tab-active: #2563eb;
+  --tab-active-text: #fff;
+  --table-stripe: #f9fafb;
+  --plot-bg: #ffffff;
+  --plot-grid: #e5e7eb;
+  --plot-text: #1a1a1a;
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e;
+  --bg-secondary: #16213e;
+  --text: #e0e0e0;
+  --text-secondary: #aaa;
+  --border: #333;
+  --accent: #4f8cff;
+  --accent-hover: #3b6fcc;
+  --tab-bg: #2a2a4a;
+  --tab-active: #4f8cff;
+  --tab-active-text: #fff;
+  --table-stripe: #1e1e3a;
+  --plot-bg: #1a1a2e;
+  --plot-grid: #333;
+  --plot-text: #e0e0e0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.header h1 { font-size: 1.4rem; }
+.header-right { display: flex; gap: 12px; align-items: center; }
+.last-updated { font-size: 0.85rem; color: var(--text-secondary); }
+.dark-toggle {
+  background: var(--tab-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.controls {
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.controls label { font-size: 0.85rem; font-weight: 600; margin-right: 4px; }
+.range-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+.range-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.date-input {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+.date-input::-webkit-calendar-picker-indicator {
+  filter: var(--cal-filter, none);
+}
+[data-theme="dark"] { --cal-filter: invert(0.8); }
+.date-apply {
+  padding: 5px 14px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+.date-reset {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+.mode-toggle {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.mode-toggle.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+[hidden] { display: none !important; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px 24px;
+}
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+.chart-container {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.chart-box { width: 100%; height: 380px; }
+.table-section {
+  padding: 12px 24px 24px;
+}
+.table-section h2 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+th, td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+th { font-weight: 600; background: var(--bg-secondary); }
+tr:nth-child(even) { background: var(--table-stripe); }
+.status-bar {
+  padding: 4px 24px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>BRUX Usage Dashboard</h1>
+  <div class="header-right">
+    <span class="last-updated" id="last-updated"></span>
+    <button class="dark-toggle" id="dark-toggle">Dark Mode</button>
+  </div>
+</div>
+
+<div id="pool-section">
+  <div class="controls">
+    <label>Time Range:</label>
+    <button class="range-btn" data-hours="6">6h</button>
+    <button class="range-btn" data-hours="12">12h</button>
+    <button class="range-btn" data-hours="24">24h</button>
+    <button class="range-btn" data-hours="72">3d</button>
+    <button class="range-btn" data-hours="168">7d</button>
+    <button class="range-btn" data-hours="336">14d</button>
+    <button class="range-btn active" data-hours="720">30d</button>
+    <div class="separator"></div>
+    <label>From:</label>
+    <input type="datetime-local" class="date-input" id="date-start">
+    <label>To:</label>
+    <input type="datetime-local" class="date-input" id="date-end">
+    <button class="date-apply" id="date-apply">Apply</button>
+    <button class="date-reset" id="date-reset">Reset</button>
+    <div class="separator"></div>
+    <label>Mode:</label>
+    <button class="mode-toggle active" id="mode-averaged" title="Resources are averaged over fixed 1-hour bins. Covers the full 30-day window.">Averaged</button>
+    <button class="mode-toggle" id="mode-snapshot" title="Exact resource usage sampled at every job start/end event. Higher fidelity but limited to the last 3 days.">Snapshot</button>
+  </div>
+  <div class="grid">
+    <div class="chart-container"><div id="chart-NCPUS" class="chart-box"></div></div>
+    <div class="chart-container"><div id="chart-NGPUS" class="chart-box"></div></div>
+    <div class="chart-container"><div id="chart-MEMORY" class="chart-box"></div></div>
+    <div class="chart-container"><div id="chart-NJOBS" class="chart-box"></div></div>
+  </div>
+  <div class="table-section">
+    <h2>Current User Usage (Last Time Bin)</h2>
+    <table id="user-table">
+      <thead><tr><th>User</th><th>CPUs</th><th>GPUs</th><th>Memory (GB)</th><th>Jobs</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="table-section">
+    <h2>Total Usage Per User (Visible Range, CPU-hours)</h2>
+    <table id="total-table">
+      <thead><tr><th>User</th><th>CPU-hours</th><th>GPU-hours</th><th>Memory-GB-hours</th><th>Job-hours</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+
+<div class="status-bar" id="status-bar">Loading...</div>
+
+<script>
+(function() {
+  const DATA_FILE = 'data_brux.json';
+  const POOL_LABEL = 'brux';
+  const REFRESH_MS = 5 * 60 * 1000;
+  const OBS_KEYS = ['NCPUS', 'NGPUS', 'MEMORY', 'NJOBS'];
+
+  let currentHours = 720;
+  let customStart = null;
+  let customEnd = null;
+  let poolData = null;
+  let snapshotMode = localStorage.getItem('snapshotMode') === 'true';
+  let darkMode = localStorage.getItem('darkMode') === 'true';
+
+  if (darkMode) document.documentElement.setAttribute('data-theme', 'dark');
+
+  // Elements
+  const rangeBtns = document.querySelectorAll('.range-btn');
+  const darkToggle = document.getElementById('dark-toggle');
+  const lastUpdatedEl = document.getElementById('last-updated');
+  const statusBar = document.getElementById('status-bar');
+
+  // Time range preset buttons
+  rangeBtns.forEach(b => b.addEventListener('click', () => {
+    rangeBtns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentHours = parseInt(b.dataset.hours);
+    customStart = null;
+    customEnd = null;
+    document.getElementById('date-start').value = '';
+    document.getElementById('date-end').value = '';
+    render();
+  }));
+
+  // Custom date range
+  document.getElementById('date-apply').addEventListener('click', () => {
+    const startVal = document.getElementById('date-start').value;
+    const endVal = document.getElementById('date-end').value;
+    if (!startVal && !endVal) return;
+    customStart = startVal ? new Date(startVal) : null;
+    customEnd = endVal ? new Date(endVal) : null;
+    rangeBtns.forEach(x => x.classList.remove('active'));
+    render();
+  });
+
+  document.getElementById('date-reset').addEventListener('click', () => {
+    customStart = null;
+    customEnd = null;
+    document.getElementById('date-start').value = '';
+    document.getElementById('date-end').value = '';
+    rangeBtns.forEach(x => x.classList.remove('active'));
+    document.querySelector('.range-btn[data-hours="720"]').classList.add('active');
+    currentHours = 720;
+    render();
+  });
+
+  // Snapshot / Averaged toggle
+  const modeAvgBtn = document.getElementById('mode-averaged');
+  const modeSnapBtn = document.getElementById('mode-snapshot');
+
+  const SNAPSHOT_MAX_HOURS = 72;
+
+  function updateModeButtons() {
+    if (snapshotMode) {
+      modeSnapBtn.classList.add('active');
+      modeAvgBtn.classList.remove('active');
+    } else {
+      modeAvgBtn.classList.add('active');
+      modeSnapBtn.classList.remove('active');
+    }
+    // Disable range buttons beyond 3d in snapshot mode
+    rangeBtns.forEach(b => {
+      const h = parseInt(b.dataset.hours);
+      if (h > SNAPSHOT_MAX_HOURS) {
+        b.disabled = snapshotMode;
+        b.style.opacity = snapshotMode ? '0.35' : '';
+        b.style.pointerEvents = snapshotMode ? 'none' : '';
+        if (snapshotMode && b.classList.contains('active')) {
+          b.classList.remove('active');
+        }
+      }
+    });
+    // Disable custom date inputs in snapshot mode
+    document.getElementById('date-start').disabled = snapshotMode;
+    document.getElementById('date-end').disabled = snapshotMode;
+    document.getElementById('date-apply').disabled = snapshotMode;
+    document.getElementById('date-apply').style.opacity = snapshotMode ? '0.35' : '';
+  }
+  updateModeButtons();
+
+  modeAvgBtn.addEventListener('click', () => {
+    snapshotMode = false;
+    localStorage.setItem('snapshotMode', 'false');
+    updateModeButtons();
+    render();
+  });
+
+  modeSnapBtn.addEventListener('click', () => {
+    snapshotMode = true;
+    localStorage.setItem('snapshotMode', 'true');
+    // Clamp time range to 3d max
+    if (currentHours > SNAPSHOT_MAX_HOURS || customStart || customEnd) {
+      currentHours = SNAPSHOT_MAX_HOURS;
+      customStart = null;
+      customEnd = null;
+      document.getElementById('date-start').value = '';
+      document.getElementById('date-end').value = '';
+      rangeBtns.forEach(x => x.classList.remove('active'));
+      const btn3d = document.querySelector('.range-btn[data-hours="72"]');
+      if (btn3d) btn3d.classList.add('active');
+    }
+    updateModeButtons();
+    render();
+  });
+
+  // Dark mode
+  darkToggle.addEventListener('click', () => {
+    darkMode = !darkMode;
+    localStorage.setItem('darkMode', darkMode);
+    if (darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    darkToggle.textContent = darkMode ? 'Light Mode' : 'Dark Mode';
+    render();
+  });
+  darkToggle.textContent = darkMode ? 'Light Mode' : 'Dark Mode';
+
+  function getPlotColors() {
+    return {
+      bg: getComputedStyle(document.documentElement).getPropertyValue('--plot-bg').trim(),
+      grid: getComputedStyle(document.documentElement).getPropertyValue('--plot-grid').trim(),
+      text: getComputedStyle(document.documentElement).getPropertyValue('--plot-text').trim(),
+    };
+  }
+
+  async function fetchJSON(url) {
+    const resp = await fetch(url + '?t=' + Date.now());
+    if (!resp.ok) throw new Error('Failed to fetch ' + url + ': ' + resp.status);
+    return resp.json();
+  }
+
+  async function loadData() {
+    try {
+      poolData = await fetchJSON(DATA_FILE);
+      statusBar.textContent = 'Data loaded at ' + new Date().toLocaleTimeString();
+      if (poolData.metadata && poolData.metadata.last_updated) {
+        lastUpdatedEl.textContent = 'Updated: ' + poolData.metadata.last_updated;
+      }
+    } catch (e) {
+      statusBar.textContent = 'Error loading data: ' + e.message;
+      console.error(e);
+    }
+  }
+
+  function filterByRange(times) {
+    let startIdx = 0;
+    let endIdx = times.length;
+
+    if (customStart || customEnd) {
+      const s = customStart || new Date(0);
+      const e = customEnd || new Date(8640000000000000);
+      for (let i = 0; i < times.length; i++) {
+        if (new Date(times[i]) >= s) { startIdx = i; break; }
+      }
+      for (let i = times.length - 1; i >= startIdx; i--) {
+        if (new Date(times[i]) <= e) { endIdx = i + 1; break; }
+      }
+    } else {
+      const cutoff = new Date(Date.now() - currentHours * 3600 * 1000);
+      for (let i = 0; i < times.length; i++) {
+        if (new Date(times[i]) >= cutoff) { startIdx = i; break; }
+      }
+    }
+    return { startIdx, endIdx };
+  }
+
+  function render() {
+    const data = poolData;
+    if (!data) return;
+
+    const colors = getPlotColors();
+    const useSnapshot = snapshotMode && data.time_idxs_snapshot && data.observables_snapshot;
+    const times = useSnapshot ? data.time_idxs_snapshot : data.time_idxs;
+    const obsSource = useSnapshot ? data.observables_snapshot : data.observables;
+    const { startIdx, endIdx } = filterByRange(times);
+    const filteredTimes = times.slice(startIdx, endIdx);
+
+    OBS_KEYS.forEach(obsKey => {
+      const obsData = obsSource[obsKey];
+
+      // Skip a metric this pool doesn't have at all (e.g. GPUs on a CPU-only
+      // pool): no usage anywhere in range and no declared capacity.
+      const container = document.getElementById('chart-' + obsKey).parentElement;
+      const anyUsage = data.users.some(u => {
+        const a = obsData && obsData[u];
+        if (!a) return false;
+        for (let i = startIdx; i < endIdx; i++) if (a[i] > 0) return true;
+        return false;
+      });
+      if (!anyUsage && !(data.thresholds[obsKey] > 0)) {
+        container.hidden = true;
+        return;
+      }
+      container.hidden = false;
+      if (!obsData) return;
+
+      const traces = data.users.map(user => {
+        const vals = obsData[user];
+        if (!vals) return null;
+        const sliced = vals.slice(startIdx, endIdx);
+        const maxVal = Math.max(...sliced);
+        if (maxVal === 0) return null; // skip users with all zeros in range
+        // Replace zeros with null so they are hidden from unified hover
+        const yvals = sliced.map(v => v > 0 ? v : null);
+        return {
+          x: filteredTimes,
+          y: yvals,
+          name: user,
+          type: 'scatter',
+          mode: 'none',
+          stackgroup: 'one',
+          line: { width: 0, shape: useSnapshot ? 'hv' : 'linear' },
+          hovertemplate: '%{y:.1f}<extra>%{fullData.name}</extra>',
+          _maxVal: maxVal,
+        };
+      }).filter(Boolean);
+      // Sort: largest last so they appear first in unified hover (reverse trace order)
+      traces.sort((a, b) => a._maxVal - b._maxVal);
+
+      const threshold = data.thresholds[obsKey];
+      const shapes = [];
+      if (threshold && threshold > 0) {
+        shapes.push({
+          type: 'line',
+          x0: filteredTimes[0],
+          x1: filteredTimes[filteredTimes.length - 1],
+          y0: threshold,
+          y1: threshold,
+          line: { color: 'red', dash: 'dash', width: 2 },
+          layer: 'above',
+        });
+      }
+
+      const niceName = data.nice_names[obsKey] || obsKey;
+      const modeLabel = useSnapshot ? 'snapshot' : 'averaged';
+      const thresholdAnnotation = (threshold && threshold > 0) ? [{
+        x: filteredTimes[filteredTimes.length - 1],
+        y: threshold,
+        text: 'Limit: ' + threshold,
+        showarrow: false,
+        font: { color: 'red', size: 10 },
+        xanchor: 'right',
+        yanchor: 'bottom',
+      }] : [];
+      const layout = {
+        title: { text: niceName + ' (' + POOL_LABEL + ', ' + modeLabel + ')', font: { size: 14, color: colors.text } },
+        hovermode: 'x unified',
+        showlegend: true,
+        legend: { font: { size: 10, color: colors.text }, bgcolor: 'rgba(0,0,0,0)' },
+        margin: { l: 50, r: 20, t: 40, b: 50 },
+        paper_bgcolor: colors.bg,
+        plot_bgcolor: colors.bg,
+        xaxis: { gridcolor: colors.grid, tickfont: { color: colors.text } },
+        yaxis: { gridcolor: colors.grid, tickfont: { color: colors.text }, title: { text: niceName, font: { color: colors.text } }, rangemode: 'tozero' },
+        shapes: shapes,
+        annotations: thresholdAnnotation,
+      };
+
+      Plotly.react('chart-' + obsKey, traces, layout, { responsive: true, displayModeBar: true });
+    });
+
+    renderUserTable(data, obsSource);
+    renderTotalTable(data, obsSource, times, startIdx, endIdx, useSnapshot);
+  }
+
+  function renderUserTable(data, obsSource) {
+    const tbody = document.querySelector('#user-table tbody');
+    tbody.innerHTML = '';
+
+    const rows = [];
+    data.users.forEach(user => {
+      const cpus = lastVal(obsSource.NCPUS, user);
+      const gpus = lastVal(obsSource.NGPUS, user);
+      const mem = lastVal(obsSource.MEMORY, user);
+      const jobs = lastVal(obsSource.NJOBS, user);
+      const total = cpus + gpus * 10 + mem + jobs;
+      if (total > 0) rows.push({ user, cpus, gpus, mem, jobs, total });
+    });
+
+    rows.sort((a, b) => b.total - a.total);
+
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + r.user + '</td><td>' + r.cpus.toFixed(1) + '</td><td>' + r.gpus.toFixed(1) + '</td><td>' + r.mem.toFixed(1) + '</td><td>' + r.jobs.toFixed(1) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function lastVal(obsObj, user) {
+    if (!obsObj || !obsObj[user]) return 0;
+    const arr = obsObj[user];
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i] !== 0) return arr[i];
+    }
+    return 0;
+  }
+
+  function renderTotalTable(data, obsSource, times, startIdx, endIdx, useSnapshot) {
+    const tbody = document.querySelector('#total-table tbody');
+    tbody.innerHTML = '';
+
+    // Precompute durations (in hours) for each time point in the visible range
+    let durations = [];
+    if (useSnapshot) {
+      // Variable intervals: duration[i] = time[i+1] - time[i], last point gets 0
+      for (let i = startIdx; i < endIdx; i++) {
+        if (i + 1 < times.length) {
+          const dt = (new Date(times[i + 1]) - new Date(times[i])) / 3600000;
+          durations.push(dt);
+        } else {
+          durations.push(0);
+        }
+      }
+    } else {
+      const binHours = data.metadata.time_resolution_seconds / 3600;
+      for (let i = startIdx; i < endIdx; i++) durations.push(binHours);
+    }
+
+    const rows = [];
+    data.users.forEach(user => {
+      const sum = (obsKey) => {
+        const arr = obsSource[obsKey] && obsSource[obsKey][user];
+        if (!arr) return 0;
+        let s = 0;
+        for (let i = startIdx; i < endIdx; i++) s += arr[i] * durations[i - startIdx];
+        return s;
+      };
+      const cpuH = sum('NCPUS');
+      const gpuH = sum('NGPUS');
+      const memH = sum('MEMORY');
+      const jobH = sum('NJOBS');
+      const total = cpuH + gpuH + memH;
+      if (total > 0) rows.push({ user, cpuH, gpuH, memH, jobH, total });
+    });
+
+    rows.sort((a, b) => b.total - a.total);
+
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + r.user + '</td><td>' + r.cpuH.toFixed(1) + '</td><td>' + r.gpuH.toFixed(1) + '</td><td>' + r.memH.toFixed(1) + '</td><td>' + r.jobH.toFixed(1) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function init() {
+    await loadData();
+    render();
+    setInterval(async () => {
+      await loadData();
+      render();
+    }, REFRESH_MS);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
