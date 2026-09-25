@@ -338,7 +338,7 @@ def _normalize(ad, now):
         "End": end,
         "NCPUS": _num(ad, "RequestCpus", "CpusProvisioned", default=1),
         "NGPUS": _gpu_count(ad, "RequestGpus", "GpusProvisioned", default=0),
-        "MEMORY": memory_mb / 1024.0,  # MB -> GB
+        "MEMORY": memory_mb / 1024.0,  # MiB -> GiB
         "NJOBS": 1,
         "State": state,
         "JobID": "%d.%d" % (int(_num(ad, "ClusterId", default=0)),

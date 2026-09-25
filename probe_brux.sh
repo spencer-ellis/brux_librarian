@@ -45,7 +45,7 @@ for a in ads:
     cur[2] = max(cur[2], g)
 print('%d machines' % len(m))
 print('TOTAL CPUs   :', sum(v[0] for v in m.values()))
-print('TOTAL MEM GB :', round(sum(v[1] for v in m.values())/1024, 1))
+print('TOTAL MEM GiB:', round(sum(v[1] for v in m.values())/1024, 1))
 print('TOTAL GPUs   :', sum(v[2] for v in m.values()))
 "
 

@@ -26,7 +26,7 @@ SNAPSHOT_WINDOW = 3600 * 24 * 3    # event-driven snapshot depth, seconds (3 day
 # Confirmed against brux on 2026-09-23 (probe_brux.sh):
 #   HTCondor 23.0.28, RHEL 9.8, submit node pbrux40cit.hep.brown.edu
 #   condor_* all in /usr/bin, single schedd, `-since` supported
-#   8 machines / 17 slots / 384 CPUs / ~3012 GB / 0 GPUs
+#   8 machines / 17 slots / 384 CPUs / ~3012 GiB / 0 GPUs
 #   AccountingGroup is undefined pool-wide (hence: one pool, no tabs)
 #----------------------------------------
 # Leave empty to find condor_* on PATH. Set to e.g. "/usr/bin" if cron has a bare PATH.
@@ -54,13 +54,13 @@ EXTRA_CONSTRAINT = ""
 # None  -> auto-detect from `condor_status` (total pool capacity)
 # 0     -> no threshold line
 # a number -> use it verbatim
-# brux auto-detects as 384 CPUs / 3012 GB / 0 GPUs. Because it reports no GPUs
+# brux auto-detects as 384 CPUs / 3012 GiB / 0 GPUs. Because it reports no GPUs
 # and no job requests them, the dashboard hides the GPU chart automatically --
 # leave NGPUS here so it reappears by itself if GPU nodes are ever added.
 THRESHOLDS = {
     "NCPUS":  None,
     "NGPUS":  None,
-    "MEMORY": None,   # GB
+    "MEMORY": None,   # GiB
     "NJOBS":  0,
 }
 
@@ -72,7 +72,7 @@ OBSERVABLES = ["NCPUS", "NGPUS", "MEMORY", "NJOBS"]
 NICE_NAMES = {
     "NCPUS":  "# of CPUs",
     "NGPUS":  "# of GPUs",
-    "MEMORY": "Memory (GB)",
+    "MEMORY": "Memory (GiB)",
     "NJOBS":  "# of Jobs",
 }
 

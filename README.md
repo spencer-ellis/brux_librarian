@@ -57,7 +57,7 @@ than as zero, so the fallback chains still work.
 
 Cluster facts below were confirmed by `probe_brux.sh` on 2026-09-23:
 HTCondor **23.0.28** on RHEL 9.8, submit node `pbrux40cit.hep.brown.edu`,
-**8 machines / 17 slots / 384 CPUs / ~3012 GB / 0 GPUs**, a single schedd, and
+**8 machines / 17 slots / 384 CPUs / ~3012 GiB / 0 GPUs**, a single schedd, and
 `AccountingGroup` undefined pool-wide.
 
 ### 1. Copy it over
